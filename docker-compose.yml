@@ -1,0 +1,39 @@
+services:
+  step-ca:
+    image: smallstep/step-ca:latest
+    container_name: step-ca
+    networks:
+      - default
+      - acme-net
+    dns:
+      - 172.30.0.2
+    # Workaround for Alpine/musl DNS issues - add /etc/hosts entries
+    extra_hosts:
+      - "test.example.com:172.30.0.2"
+      - "step-test.example.com:172.30.0.2"
+      - "*.example.com:172.30.0.2"
+    ports:
+      - "9000:9000"
+    environment:
+      - DOCKER_STEPCA_INIT_NAME=Smallstep
+      - DOCKER_STEPCA_INIT_DNS_NAMES=localhost,step-ca
+      - DOCKER_STEPCA_INIT_ACME=true
+    volumes:
+      - step-ca-data:/home/step
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "step", "ca", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  step-ca-data:
+
+networks:
+  default:
+    driver: bridge
+  acme-net:
+    external: true
+    name: acme-net
